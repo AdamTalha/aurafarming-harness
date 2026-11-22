@@ -1,4 +1,5 @@
 import { HOSTED_APP_CHANNEL } from "~/branding";
+import { DISABLED_SETTINGS_PATHS } from "@t3tools/shared/aurafarmingFeatures";
 import { isElectron } from "~/env";
 import { isMacPlatform, isWindowsPlatform, normalizeSearchText } from "~/lib/utils";
 import { STATIC_KEYBINDING_COMMANDS, type KeybindingCommand } from "@t3tools/contracts";
@@ -175,15 +176,22 @@ const ALL_SETTINGS_NAV_GROUPS: ReadonlyArray<SettingsNavGroup> = [
   },
 ];
 
-const SETTINGS_NAV_GROUPS_WITHOUT_SECRETS = ALL_SETTINGS_NAV_GROUPS.map((group) => ({
+const ENABLED_SETTINGS_NAV_GROUPS: ReadonlyArray<SettingsNavGroup> = ALL_SETTINGS_NAV_GROUPS.map(
+  (group) => ({
+    ...group,
+    paths: group.paths.filter((path) => !DISABLED_SETTINGS_PATHS.has(path)),
+  }),
+).filter((group) => group.paths.length > 0);
+
+const SETTINGS_NAV_GROUPS_WITHOUT_SECRETS = ENABLED_SETTINGS_NAV_GROUPS.map((group) => ({
   ...group,
   paths: group.paths.filter((path) => path !== "/settings/secrets"),
-}));
+})).filter((group) => group.paths.length > 0);
 
 /** Sidebar groups; Secrets shows only when some environment's server enables secret providers. */
 export function settingsNavGroups(hasSecretProvidersEnvironment: boolean) {
   return hasSecretProvidersEnvironment
-    ? ALL_SETTINGS_NAV_GROUPS
+    ? ENABLED_SETTINGS_NAV_GROUPS
     : SETTINGS_NAV_GROUPS_WITHOUT_SECRETS;
 }
 
@@ -1644,6 +1652,7 @@ export function filterAvailableSettingsSearchItems(
   const items: ReadonlyArray<SettingsSearchItem> = SETTINGS_SEARCH_ITEMS;
   return items.filter(
     (item) =>
+      !DISABLED_SETTINGS_PATHS.has(item.to) &&
       (!item.cloudOnly || availability.hasCloudPublicConfig) &&
       (!item.environmentOnly || availability.hasEnvironment) &&
       (!item.providerSettingsOnly || availability.hasProviderSettingsEnvironment) &&

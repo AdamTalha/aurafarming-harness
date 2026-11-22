@@ -7,6 +7,7 @@ import type {
   ThreadId,
 } from "@t3tools/contracts";
 
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import { scopeProjectRef } from "@t3tools/client-runtime/environment";
 import { isScratchProject } from "@t3tools/client-runtime/state/projects";
 
@@ -123,6 +124,7 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
   // A No project thread's folder sits inside the shared scratch root, so it must never get git.
   // Until the config and project load, a No project thread looks like any other folder.
   const offersGit =
+    AURAFARMING_FEATURES.git &&
     props.gitCwd !== null &&
     serverConfig !== undefined &&
     project !== null &&
@@ -188,7 +190,8 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
           scripts: visible.scripts && props.activeProjectScripts !== undefined,
           branch: offersGit && folderIsRepo && visible.branch,
           // Without a branch selector, linked pull requests still need somewhere to show.
-          pullRequests: !(offersGit && folderIsRepo) && visible.branch,
+          pullRequests:
+            AURAFARMING_FEATURES.pullRequests && !(offersGit && folderIsRepo) && visible.branch,
           // A plain folder that tracks repositories is not asked to become one itself.
           git:
             offersGit &&
@@ -306,7 +309,10 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
                 <ThreadServersPanel environmentId={props.environmentId} threadId={props.threadId} />
               ) : null}
 
-              {density === "full" && !props.draftId && visible.automations ? (
+              {AURAFARMING_FEATURES.scheduledTasks &&
+              density === "full" &&
+              !props.draftId &&
+              visible.automations ? (
                 <ThreadAutomationsPanel
                   environmentId={props.environmentId}
                   threadId={props.threadId}

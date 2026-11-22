@@ -42,6 +42,7 @@ import { McpSchema, Tool, Toolkit } from "effect/ai";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import * as ThreadManagementService from "../../../orchestration-v2/ThreadManagementService.ts";
 import * as PeerForwarding from "../../../peer/PeerForwarding.ts";
 import * as PeerLinkRequests from "../../../peer/PeerLinkRequests.ts";
@@ -178,7 +179,8 @@ const ScheduleTaskTool = Tool.make("schedule_task", {
 })
   .annotate(Tool.Title, "Schedule a task")
   .annotate(Tool.Destructive, true)
-  .annotate(Tool.OpenWorld, true);
+  .annotate(Tool.OpenWorld, true)
+  .annotate(McpSchema.EnabledWhen, () => AURAFARMING_FEATURES.scheduledTasks);
 
 const ListScheduledTasksTool = Tool.make("list_scheduled_tasks", {
   parameters: OrchestratorMcpListScheduledTasksInput,
@@ -192,7 +194,8 @@ const ListScheduledTasksTool = Tool.make("list_scheduled_tasks", {
   .annotate(Tool.Title, "List scheduled tasks")
   .annotate(Tool.Readonly, true)
   .annotate(Tool.Destructive, false)
-  .annotate(Tool.Idempotent, true);
+  .annotate(Tool.Idempotent, true)
+  .annotate(McpSchema.EnabledWhen, () => AURAFARMING_FEATURES.scheduledTasks);
 
 const DeleteScheduledTaskTool = Tool.make("delete_scheduled_task", {
   description:
@@ -204,7 +207,8 @@ const DeleteScheduledTaskTool = Tool.make("delete_scheduled_task", {
   dependencies,
 })
   .annotate(Tool.Title, "Delete a scheduled task")
-  .annotate(Tool.Destructive, true);
+  .annotate(Tool.Destructive, true)
+  .annotate(McpSchema.EnabledWhen, () => AURAFARMING_FEATURES.scheduledTasks);
 
 const RequestSecretTool = Tool.make("request_secret", {
   description:

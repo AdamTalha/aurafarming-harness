@@ -25,6 +25,7 @@ import * as SecureRandom from "effect/crypto/SecureRandom";
 import * as Schema from "effect/Schema";
 import { McpSchema, Tool, Toolkit } from "effect/ai";
 
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import * as ThreadSearch from "../../../orchestration-v2/ThreadSearch.ts";
 import * as ScheduledTaskService from "../../../scheduledTasks/ScheduledTaskService.ts";
 import * as ThreadManagementService from "../../../orchestration-v2/ThreadManagementService.ts";
@@ -239,7 +240,8 @@ const ScheduledTaskRunTool = Tool.make("run_scheduled_task_now", {
   dependencies: [...commandTool.dependencies, ScheduledTaskService.ScheduledTaskService],
 })
   .annotate(Tool.Destructive, true)
-  .annotate(Tool.OpenWorld, true);
+  .annotate(Tool.OpenWorld, true)
+  .annotate(McpSchema.EnabledWhen, () => AURAFARMING_FEATURES.scheduledTasks);
 
 const SubmitOutputTool = Tool.make("t3_submit_output", {
   ...commandTool,

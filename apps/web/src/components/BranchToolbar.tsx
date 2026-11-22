@@ -1,3 +1,4 @@
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
 import {
   ClipboardApiUnavailableError,
@@ -446,13 +447,15 @@ const RunContextSelector = memo(function RunContextSelector({
                 <MiddleTruncate value={resolveCurrentWorkspaceLabel(activeWorktreePath, m)} />
               </span>
             </MenuRadioItem>
-            <MenuRadioItem disabled={envModeLocked} value="worktree" closeOnClick>
-              <span className="flex min-w-0 items-center gap-1.5">
-                <FolderGit2Icon className="size-3" />
-                <span className="min-w-0 truncate">{resolveEnvModeLabel("worktree", m)}</span>
-              </span>
-            </MenuRadioItem>
-            {previousWorktreeLabel ? (
+            {AURAFARMING_FEATURES.worktrees ? (
+              <MenuRadioItem disabled={envModeLocked} value="worktree" closeOnClick>
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <FolderGit2Icon className="size-3" />
+                  <span className="min-w-0 truncate">{resolveEnvModeLabel("worktree", m)}</span>
+                </span>
+              </MenuRadioItem>
+            ) : null}
+            {AURAFARMING_FEATURES.worktrees && previousWorktreeLabel ? (
               <MenuRadioItem disabled={envModeLocked} value="previous-worktree" closeOnClick>
                 <PreviousWorktreeItemContent branch={previousWorktreeBranch} />
               </MenuRadioItem>

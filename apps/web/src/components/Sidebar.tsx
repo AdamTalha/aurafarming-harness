@@ -101,8 +101,14 @@ import {
   shortcutLabelForCommand,
   threadJumpCommandForIndex,
   threadJumpIndexFromCommand,
+  threadRecentDirectionFromCommand,
   threadTraversalDirectionFromCommand,
 } from "../keybindings";
+import {
+  commitThreadMruCycle,
+  recordThreadMruVisit,
+  stepThreadMruCycle,
+} from "../lib/threadMruHistory";
 import { isModelPickerOpen } from "../modelPickerVisibility";
 import { isMacPlatform } from "~/lib/utils";
 import { readLocalApi } from "../localApi";
@@ -2913,8 +2919,63 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
       handleThreadContextMenu(threadRef, position, source, true),
   );
 
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- subscribes to window keydown for thread navigation shortcuts using the current thread list
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- records visited threads into the MRU stack for Ctrl+Tab switching
   useEffect(() => {
+    recordThreadMruVisit(routeRowKey);
+  }, [routeRowKey]);
+
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- subscribes to window keydown/keyup for MRU Ctrl+Tab and thread navigation shortcuts
+  useEffect(() => {
+    const navigateToRowKey = (event: KeyboardEvent, targetRowKey: string | null) => {
+      if (!targetRowKey) return false;
+      const targetDraftId = draftIdByRowKey.get(targetRowKey);
+      const targetThread = threadByKey.get(targetRowKey);
+      if (targetDraftId === undefined && !targetThread) return false;
+      event.preventDefault();
+      event.stopPropagation();
+      if (targetDraftId !== undefined) navigateToDraft(targetDraftId);
+      else if (targetThread)
+        navigateToThread(scopeThreadRef(targetThread.environmentId, targetThread.id));
+      return true;
+    };
+
+    const onWindowKeyDownCapture = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat || isCommandPaletteOpen() || isModelPickerOpen()) {
+        return;
+      }
+      if (
+        event.target instanceof HTMLElement &&
+        event.target.closest("[data-keybinding-capture]")
+      ) {
+        return;
+      }
+      const command = resolveShortcutCommand(event, keybindings, {
+        platform: navigator.platform,
+        context: threadShortcutContext(routeThreadRef),
+      });
+      const recentDirection = threadRecentDirectionFromCommand(command);
+      if (recentDirection !== null) {
+        navigateToRowKey(
+          event,
+          stepThreadMruCycle({
+            direction: recentDirection,
+            currentRowKey: routeRowKey,
+            orderedRowKeys,
+          }),
+        );
+      }
+    };
+
+    const onWindowKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Control" || event.key === "Meta" || !event.ctrlKey) {
+        commitThreadMruCycle(routeRowKey);
+      }
+    };
+
+    const onWindowBlur = () => {
+      commitThreadMruCycle(routeRowKey);
+    };
+
     const onWindowKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.repeat || isCommandPaletteOpen() || isModelPickerOpen()) {
         return;
@@ -2923,21 +2984,10 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
         platform: navigator.platform,
         context: threadShortcutContext(routeThreadRef),
       });
-      const navigateToRowKey = (targetRowKey: string | null) => {
-        if (!targetRowKey) return false;
-        const targetDraftId = draftIdByRowKey.get(targetRowKey);
-        const targetThread = threadByKey.get(targetRowKey);
-        if (targetDraftId === undefined && !targetThread) return false;
-        event.preventDefault();
-        event.stopPropagation();
-        if (targetDraftId !== undefined) navigateToDraft(targetDraftId);
-        else if (targetThread)
-          navigateToThread(scopeThreadRef(targetThread.environmentId, targetThread.id));
-        return true;
-      };
       const traversalDirection = threadTraversalDirectionFromCommand(command);
       if (traversalDirection !== null) {
         navigateToRowKey(
+          event,
           resolveAdjacentThreadId({
             threadIds: orderedRowKeys,
             currentThreadId: routeRowKey,
@@ -2948,10 +2998,18 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
       }
       const jumpIndex = threadJumpIndexFromCommand(command ?? "");
       if (jumpIndex === null) return;
-      navigateToRowKey(orderedRowKeys[jumpIndex] ?? null);
+      navigateToRowKey(event, orderedRowKeys[jumpIndex] ?? null);
     };
+    window.addEventListener("keydown", onWindowKeyDownCapture, true);
     window.addEventListener("keydown", onWindowKeyDown);
-    return () => window.removeEventListener("keydown", onWindowKeyDown);
+    window.addEventListener("keyup", onWindowKeyUp, true);
+    window.addEventListener("blur", onWindowBlur);
+    return () => {
+      window.removeEventListener("keydown", onWindowKeyDownCapture, true);
+      window.removeEventListener("keydown", onWindowKeyDown);
+      window.removeEventListener("keyup", onWindowKeyUp, true);
+      window.removeEventListener("blur", onWindowBlur);
+    };
   }, [
     draftIdByRowKey,
     keybindings,

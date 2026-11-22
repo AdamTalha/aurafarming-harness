@@ -206,6 +206,7 @@ import { threadPullRequestPanelTarget } from "./pullRequest/pullRequestDetail.lo
 import { LinkPullRequestDialogHost } from "./pullRequest/LinkPullRequestDialog";
 import { GuestPendingMessages } from "./chat/GuestShareControls";
 import { useDeviceState } from "~/state/device";
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import { BranchToolbar, type BranchToolbarHandle } from "./BranchToolbar";
 import { ComposerContextPermissions } from "./ComposerContextPermissions";
 import { makeWorkspaceFileDropHandlers } from "./chat/workspaceFileDrop";
@@ -3489,7 +3490,7 @@ export default function ChatView(props: ChatViewProps) {
       ref={setWorkspaceLayoutElement}
       className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
     >
-      {embedded ? null : (
+      {embedded || !AURAFARMING_FEATURES.devices ? null : (
         <DeviceSetupDialogHost
           threadKey={activeThreadKey}
           threadRef={activeThreadRef}
@@ -3966,9 +3967,11 @@ export default function ChatView(props: ChatViewProps) {
                                   worktreePath={activeThread.worktreePath}
                                   isServerThread={isServerThread}
                                   showGitControls={
-                                    isGitRepo || worktreeRepositoryChoices.tracksGitRepositories
+                                    AURAFARMING_FEATURES.git &&
+                                    AURAFARMING_FEATURES.worktrees &&
+                                    (isGitRepo || worktreeRepositoryChoices.tracksGitRepositories)
                                   }
-                                  showBranchControls={isGitRepo}
+                                  showBranchControls={AURAFARMING_FEATURES.git && isGitRepo}
                                   {...(routeKind === "draft" && draftId ? { draftId } : {})}
                                   onEnvModeChange={onEnvModeChangeStable}
                                   startFromOrigin={startFromOrigin}
@@ -4050,12 +4053,14 @@ export default function ChatView(props: ChatViewProps) {
 
             {embedded ? null : (
               <>
-                <BranchRestoreConfirmHost
-                  threadKey={activeThreadKey}
-                  threadBranch={localCheckoutBranchMismatch?.threadBranch ?? ""}
-                  canWriteSourceControl={canWriteSourceControl}
-                  onConfirm={handleSwitchCheckoutToThreadStable}
-                />
+                {AURAFARMING_FEATURES.git ? (
+                  <BranchRestoreConfirmHost
+                    threadKey={activeThreadKey}
+                    threadBranch={localCheckoutBranchMismatch?.threadBranch ?? ""}
+                    canWriteSourceControl={canWriteSourceControl}
+                    onConfirm={handleSwitchCheckoutToThreadStable}
+                  />
+                ) : null}
 
                 <ThreadDetailsPanel
                   anchor={threadPanelPopoverAnchorRef}
@@ -4130,13 +4135,15 @@ export default function ChatView(props: ChatViewProps) {
                   }}
                 />
 
-                <PullRequestThreadDialogHost
-                  threadKey={activeThreadKey}
-                  environmentId={activeThread.environmentId}
-                  threadId={activeThread.id}
-                  cwd={activeProject?.workspaceRoot ?? null}
-                  onPrepared={handlePreparedPullRequestThreadStable}
-                />
+                {AURAFARMING_FEATURES.pullRequests ? (
+                  <PullRequestThreadDialogHost
+                    threadKey={activeThreadKey}
+                    environmentId={activeThread.environmentId}
+                    threadId={activeThread.id}
+                    cwd={activeProject?.workspaceRoot ?? null}
+                    onPrepared={handlePreparedPullRequestThreadStable}
+                  />
+                ) : null}
               </>
             )}
           </ThreadFindCanvas>
@@ -4210,13 +4217,16 @@ export default function ChatView(props: ChatViewProps) {
           onAddPullRequests={addPullRequestsSurfaceStable}
           onAddDevice={addDeviceSurfaceStable}
           onAddSideChat={sideChatsOffered ? openSideChatStable : undefined}
-          browserAvailable={canOperatePreview && browserAvailable}
+          browserAvailable={AURAFARMING_FEATURES.preview && canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
-          diffAvailable={isServerThread && diffAvailable}
+          diffAvailable={AURAFARMING_FEATURES.diffs && isServerThread && diffAvailable}
           filesAvailable={activeProject !== null}
-          pullRequestAvailable={pullRequestSurfaceAvailable}
-          pullRequestsAvailable={linkedItemsSurfaceAvailable}
-          deviceAvailable={activeThreadRef !== null}
+          pullRequestAvailable={AURAFARMING_FEATURES.pullRequests && pullRequestSurfaceAvailable}
+          pullRequestsAvailable={
+            (AURAFARMING_FEATURES.pullRequests || AURAFARMING_FEATURES.issues) &&
+            linkedItemsSurfaceAvailable
+          }
+          deviceAvailable={AURAFARMING_FEATURES.devices && activeThreadRef !== null}
           sideChatAvailable={sideChat.available}
           sideChatDisabledReason={sideChatDisabledReason}
         >
@@ -4232,7 +4242,7 @@ export default function ChatView(props: ChatViewProps) {
         worktreePath={activeThread?.worktreePath ?? null}
         onConfirm={onConfirmRevertStable}
       />
-      {embedded ? null : <LinkPullRequestDialogHost />}
+      {embedded || !AURAFARMING_FEATURES.pullRequests ? null : <LinkPullRequestDialogHost />}
       <ThreadVisitWatermark threadRef={routeThreadRef} />
       <ExpandedImageDialogHost threadKey={routeThreadKey} />
     </div>

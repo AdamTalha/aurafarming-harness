@@ -1,3 +1,4 @@
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
 import { decodeMsg, msg, T, useGT, useMessages, Var } from "gt-react";
 import { m, type MessageResolver } from "../i18n/messages";
@@ -1505,6 +1506,7 @@ function OpenCommandPaletteDialog(props: {
   }
 
   if (
+    AURAFARMING_FEATURES.pullRequests &&
     activeThread !== null &&
     threadPullRequestLinkMode(activeThreadServerConfig?.environment.capabilities) !== "unsupported"
   ) {
@@ -1676,7 +1678,10 @@ function OpenCommandPaletteDialog(props: {
 
   actionItems.push(themeEditorItem);
 
-  if (environments.some((environment) => environment.serverConfig !== null)) {
+  if (
+    AURAFARMING_FEATURES.pullRequests &&
+    environments.some((environment) => environment.serverConfig !== null)
+  ) {
     actionItems.push({
       kind: "action",
       value: "action:pull-requests",
@@ -1705,6 +1710,7 @@ function OpenCommandPaletteDialog(props: {
   }
 
   if (
+    AURAFARMING_FEATURES.issues &&
     environments.some(
       (environment) => environment.serverConfig?.environment.capabilities.issues === true,
     )

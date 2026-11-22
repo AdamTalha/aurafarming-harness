@@ -1,3 +1,4 @@
+import { AURAFARMING_BRAND, AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import type { ProviderAdapterV2RuntimePolicy } from "./ProviderAdapter.ts";
 
 /** Session-invariant; harnesses with a native system-prompt append can carry it once per session. */
@@ -25,12 +26,15 @@ export function buildRuntimeInstructions(runtime: {
     modelName && modelName !== model ? `${modelName} (model slug: ${model})` : model;
   const modelInfo = model && model !== "auto" && model !== "default" ? `, as ${modelLabel}` : "";
   const effortInfo = effort ? ` with ${effort} reasoning effort` : "";
-  const runtimeInfo = `<runtime_info>In case you're asked: you are running in T3 Code through the ${harness} harness${modelInfo}${effortInfo}. No need to mention this otherwise. You can embed images, video, and audio using Markdown image syntax with absolute file paths. Link every other file you cite or produce by its absolute path, as in [http.ts:42](/abs/path/http.ts:42), so the user can open it in T3 Code's files viewer.</runtime_info>`;
+  const runtimeInfo = `<runtime_info>In case you're asked: you are running in ${AURAFARMING_BRAND.displayName} through the ${harness} harness${modelInfo}${effortInfo}. No need to mention this otherwise. You can embed images, video, and audio using Markdown image syntax with absolute file paths. Link every other file you cite or produce by its absolute path, as in [http.ts:42](/abs/path/http.ts:42), so the user can open it in ${AURAFARMING_BRAND.displayName}'s files viewer.</runtime_info>`;
   const workspace =
     runtime.runtimePolicy === undefined ? "" : buildWorkspaceInstructions(runtime.runtimePolicy);
+  const includePullRequestLinking =
+    runtime.pullRequestLinking !== false &&
+    (AURAFARMING_FEATURES.pullRequests || AURAFARMING_FEATURES.issues);
   return [
     runtimeInfo,
-    ...(runtime.pullRequestLinking === false ? [] : [PULL_REQUEST_LINKING_INSTRUCTIONS]),
+    ...(!includePullRequestLinking ? [] : [PULL_REQUEST_LINKING_INSTRUCTIONS]),
     ...(workspace === "" ? [] : [workspace]),
   ].join("\n\n");
 }

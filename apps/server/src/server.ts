@@ -6,6 +6,7 @@ import * as AssetSigner from "./assets/AssetSigner.ts";
 import * as WorkspacePreviewRevisions from "./assets/WorkspacePreviewRevisions.ts";
 import * as DatabaseStorage from "./persistence/DatabaseStorage.ts";
 import * as StorageCleanup from "./storageCleanup.ts";
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import * as PullRequestSyncReactor from "./orchestration-v2/PullRequestSyncReactor.ts";
 import * as PullRequestWatchReactor from "./orchestration-v2/PullRequestWatchReactor.ts";
 import * as DelegatedTaskQuestionReactor from "./orchestration-v2/DelegatedTaskQuestionReactor.ts";
@@ -729,6 +730,7 @@ const layerRuntimeCoreDependenciesBase = Layer.mergeAll(
   DelegatedTaskAnalytics.layer,
   Layer.effectDiscard(
     Effect.gen(function* () {
+      if (!AURAFARMING_FEATURES.pullRequests) return;
       const service = yield* PullRequestSyncReactor.PullRequestSyncReactor;
       yield* service.start();
     }),
@@ -739,6 +741,7 @@ const layerRuntimeCoreDependenciesBase = Layer.mergeAll(
   ),
   Layer.effectDiscard(
     Effect.gen(function* () {
+      if (!AURAFARMING_FEATURES.pullRequests) return;
       const service = yield* PullRequestWatchReactor.PullRequestWatchReactor;
       yield* service.start();
     }),

@@ -14,6 +14,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import * as DesktopManagedPolicy from "../app/DesktopManagedPolicy.ts";
 import * as DesktopObservability from "../app/DesktopObservability.ts";
 
@@ -29,12 +30,19 @@ export class DesktopUpdatePolicy extends Context.Service<DesktopUpdatePolicy, Up
   "@t3tools/desktop/updates/DesktopUpdatePolicy",
 ) {}
 
-export const unmanagedUpdatePolicy: UpdatePolicy = {
-  mode: "auto",
-  feedUrl: undefined,
-  allowNightly: true,
-  message: null,
-};
+export const unmanagedUpdatePolicy: UpdatePolicy = AURAFARMING_FEATURES.autoUpdater
+  ? {
+      mode: "auto",
+      feedUrl: undefined,
+      allowNightly: true,
+      message: null,
+    }
+  : {
+      mode: "off",
+      feedUrl: undefined,
+      allowNightly: false,
+      message: "Custom fork build — sync updates via git rebase upstream/main.",
+    };
 
 function resolveUpdatePolicy(document: ManagedPolicyDocument | undefined): UpdatePolicy {
   const updates = document?.limits?.updates;

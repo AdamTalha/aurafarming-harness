@@ -1,12 +1,48 @@
 import type { SVGProps } from "react";
 
+/** Aurafarming Harness geometric aura-prism emblem. */
 export function T3Wordmark(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg {...props} viewBox="15.5309 37 94.3941 56.96" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M33.4509 93V47.56H15.5309V37H64.3309V47.56H46.4109V93H33.4509ZM86.7253 93.96C82.832 93.96 78.9653 93.4533 75.1253 92.44C71.2853 91.3733 68.032 89.88 65.3653 87.96L70.4053 78.04C72.5386 79.5867 75.0186 80.8133 77.8453 81.72C80.672 82.6267 83.5253 83.08 86.4053 83.08C89.6586 83.08 92.2186 82.44 94.0853 81.16C95.952 79.88 96.8853 78.12 96.8853 75.88C96.8853 73.7467 96.0586 72.0667 94.4053 70.84C92.752 69.6133 90.0853 69 86.4053 69H80.4853V60.44L96.0853 42.76L97.5253 47.4H68.1653V37H107.365V45.4L91.8453 63.08L85.2853 59.32H89.0453C95.9253 59.32 101.125 60.8667 104.645 63.96C108.165 67.0533 109.925 71.0267 109.925 75.88C109.925 79.0267 109.099 81.9867 107.445 84.76C105.792 87.48 103.259 89.6933 99.8453 91.4C96.432 93.1067 92.0586 93.96 86.7253 93.96Z"
-        fill="currentColor"
+    <svg {...props} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="afMarkLeft" x1="110" y1="395" x2="275" y2="95" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#6366F1" />
+          <stop offset="50%" stopColor="#A78BFA" />
+          <stop offset="100%" stopColor="#F8FAFC" />
+        </linearGradient>
+        <linearGradient id="afMarkRight" x1="256" y1="95" x2="402" y2="395" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#E0F2FE" />
+          <stop offset="45%" stopColor="#38BDF8" />
+          <stop offset="100%" stopColor="#6366F1" />
+        </linearGradient>
+        <linearGradient id="afMarkRing" x1="88" y1="88" x2="424" y2="424" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.85" />
+          <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#818CF8" stopOpacity="0.85" />
+        </linearGradient>
+        <linearGradient id="afMarkSpark" x1="256" y1="242" x2="256" y2="358" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="55%" stopColor="#7DD3FC" />
+          <stop offset="100%" stopColor="#8B5CF6" />
+        </linearGradient>
+      </defs>
+      <circle
+        cx="256"
+        cy="256"
+        r="214"
+        stroke="url(#afMarkRing)"
+        strokeWidth="16"
+        strokeDasharray="220 38 92 38"
+        strokeLinecap="round"
       />
+      <path d="M256 76L108 398H172L256 212L292 292L322 228L256 76Z" fill="url(#afMarkLeft)" />
+      <path
+        d="M256 76L404 398H340L256 212V76Z"
+        fill="url(#afMarkRight)"
+        fillOpacity="0.94"
+      />
+      <path d="M256 244L286 306L256 366L226 306L256 244Z" fill="url(#afMarkSpark)" />
+      <rect x="188" y="302" width="136" height="10" rx="5" fill="#FFFFFF" fillOpacity="0.92" />
     </svg>
   );
 }

@@ -286,6 +286,14 @@ export function threadTraversalDirectionFromCommand(
   return null;
 }
 
+export function threadRecentDirectionFromCommand(
+  command: string | null,
+): "next" | "previous" | null {
+  if (command === "thread.recentNext") return "next";
+  if (command === "thread.recentPrevious") return "previous";
+  return null;
+}
+
 export function isThreadNavigationShortcut(
   event: ShortcutEventLike,
   keybindings: ResolvedKeybindingsConfig,
@@ -294,6 +302,7 @@ export function isThreadNavigationShortcut(
   const command = resolveShortcutCommand(event, keybindings, options);
   return (
     threadTraversalDirectionFromCommand(command) !== null ||
+    threadRecentDirectionFromCommand(command) !== null ||
     threadJumpIndexFromCommand(command ?? "") !== null
   );
 }

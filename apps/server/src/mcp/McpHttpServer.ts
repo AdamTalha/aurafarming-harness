@@ -96,6 +96,7 @@ import * as HtmlHandlers from "./toolkits/html/handlers.ts";
 import { MessageToolkit } from "./toolkits/message/tools.ts";
 import * as MessageHandlers from "./toolkits/message/handlers.ts";
 import { HtmlPreviewTool, HtmlPreviewToolkit, HtmlRenderToolkit } from "./toolkits/html/tools.ts";
+import { AURAFARMING_BRAND, AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import { MCP_HTTP_PATH } from "../httpCors.ts";
 import { requestUrl } from "../requestUrl.ts";
 
@@ -334,7 +335,7 @@ const makeMcpAuthMiddleware = Effect.gen(function* () {
     if (limited.client?.linked === true && !linkedEnvironments) return linkedEnvironmentsOff;
     const origin = Option.getOrUndefined(Option.map(requestUrl(request), (url) => url.origin));
     const forge =
-      limited.thread === undefined
+      !AURAFARMING_FEATURES.pullRequests || limited.thread === undefined
         ? undefined
         : yield* Cache.get(forgeOfThread, limited.thread.threadId);
     return { ...limited, linkedEnvironments, origin, ...(forge === undefined ? {} : { forge }) };
@@ -1371,7 +1372,7 @@ export const layerInProcessMcpServer = McpServer.middleware<{
 
 export const layerMcpTransport = <RA, RE, RR>(registrations: Layer.Layer<RA, RE, RR>) =>
   McpServer.layerHttp({
-    name: "T3 Code",
+    name: AURAFARMING_BRAND.displayName,
     version: packageJson.version,
     path: MCP_HTTP_PATH,
     protocols: mcpProtocols,
@@ -1379,20 +1380,19 @@ export const layerMcpTransport = <RA, RE, RR>(registrations: Layer.Layer<RA, RE,
     registrations,
   }).pipe(Layer.provide(layerMcpAuthMiddleware));
 
-/** Every tool the T3 MCP server advertises. AgentContextBudget.test.ts measures this set. */
+/** Every tool the MCP server advertises. Filtered by AURAFARMING_FEATURES. */
 export const layerTools = Layer.mergeAll(
-  layerPreviewToolkit,
+  ...(AURAFARMING_FEATURES.preview ? [layerPreviewToolkit, layerPreviewControlsRegistration] : []),
   layerOrchestratorToolkit,
   layerThreadToolkit,
   layerAttachmentToolkit,
   layerProjectRegistration,
   layerEnvironmentToolkit,
   layerThemeToolkit,
-  layerPreviewControlsRegistration,
-  layerWorktreeToolkitRegistration,
-  layerPullRequestsToolkit,
-  layerIssuesToolkit,
-  layerDeviceToolkit,
+  ...(AURAFARMING_FEATURES.worktrees ? [layerWorktreeToolkitRegistration] : []),
+  ...(AURAFARMING_FEATURES.pullRequests ? [layerPullRequestsToolkit] : []),
+  ...(AURAFARMING_FEATURES.issues ? [layerIssuesToolkit] : []),
+  ...(AURAFARMING_FEATURES.devices ? [layerDeviceToolkit] : []),
   layerHtmlToolkit,
   layerMessageToolkit,
 );

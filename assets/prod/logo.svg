@@ -1,4 +1,47 @@
-<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M0 10C0 4.47715 4.47715 0 10 0H118C123.523 0 128 4.47715 128 10V118C128 123.523 123.523 128 118 128H10C4.47715 128 0 123.523 0 118V10Z" fill="black"/>
-<path d="M33.4509 93V47.56H15.5309V37H64.3309V47.56H46.4109V93H33.4509ZM86.7253 93.96C82.832 93.96 78.9653 93.4533 75.1253 92.44C71.2853 91.3733 68.032 89.88 65.3653 87.96L70.4053 78.04C72.5386 79.5867 75.0186 80.8133 77.8453 81.72C80.672 82.6267 83.5253 83.08 86.4053 83.08C89.6586 83.08 92.2186 82.44 94.0853 81.16C95.952 79.88 96.8853 78.12 96.8853 75.88C96.8853 73.7467 96.0586 72.0667 94.4053 70.84C92.752 69.6133 90.0853 69 86.4053 69H80.4853V60.44L96.0853 42.76L97.5253 47.4H68.1653V37H107.365V45.4L91.8453 63.08L85.2853 59.32H89.0453C95.9253 59.32 101.125 60.8667 104.645 63.96C108.165 67.0533 109.925 71.0267 109.925 75.88C109.925 79.0267 109.099 81.9867 107.445 84.76C105.792 87.48 103.259 89.6933 99.8453 91.4C96.432 93.1067 92.0586 93.96 86.7253 93.96Z" fill="white"/>
+<svg width="1024" height="1024" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="32%" r="72%">
+      <stop offset="0%" stop-color="#1C1F38"/>
+      <stop offset="55%" stop-color="#0E101C"/>
+      <stop offset="100%" stop-color="#07080F"/>
+    </radialGradient>
+    <radialGradient id="auraGlow" cx="50%" cy="46%" r="46%">
+      <stop offset="0%" stop-color="#7C5CFF" stop-opacity="0.52"/>
+      <stop offset="48%" stop-color="#38BDF8" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="leftBlade" x1="110" y1="395" x2="275" y2="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#F8FAFC"/>
+    </linearGradient>
+    <linearGradient id="rightBlade" x1="256" y1="95" x2="402" y2="395" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E0F2FE"/>
+      <stop offset="45%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="88" y1="88" x2="424" y2="424" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A78BFA" stop-opacity="0.72"/>
+      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#818CF8" stop-opacity="0.72"/>
+    </linearGradient>
+    <linearGradient id="sparkGrad" x1="256" y1="242" x2="256" y2="358" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="55%" stop-color="#7DD3FC"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="rimGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.24"/>
+      <stop offset="50%" stop-color="#A78BFA" stop-opacity="0.09"/>
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.20"/>
+    </linearGradient>
+  </defs>
+  <rect x="12" y="12" width="488" height="488" rx="116" fill="url(#bgGrad)"/>
+  <rect x="14" y="14" width="484" height="484" rx="114" stroke="url(#rimGrad)" stroke-width="4"/>
+  <circle cx="256" cy="244" r="200" fill="url(#auraGlow)"/>
+  <circle cx="256" cy="256" r="172" stroke="url(#ringGrad)" stroke-width="5.5" stroke-dasharray="184 28 74 28" stroke-linecap="round"/>
+  <path d="M256 92L118 388H178L256 218L290 292L318 232L256 92Z" fill="url(#leftBlade)"/>
+  <path d="M256 92L394 388H334L256 218V92Z" fill="url(#rightBlade)" fill-opacity="0.93"/>
+  <path d="M256 248L283 305L256 360L229 305L256 248Z" fill="url(#sparkGrad)"/>
+  <rect x="192" y="301" width="128" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.9"/>
 </svg>

@@ -66,6 +66,7 @@ import {
   useState,
 } from "react";
 
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import { isElectron } from "~/env";
 import type { DesktopPreviewOverlay } from "~/previewStateStore";
 import { linkedThreadTitle } from "~/linkedThreadSurface";
@@ -384,39 +385,55 @@ function RightPanelEmptyState(props: {
       disabledReason: messages(SURFACE_UNAVAILABLE_HINTS.files),
       onClick: props.onAddFiles,
     },
-    {
-      label: msg("Diff"),
-      icon: FileDiff,
-      shortcut: "D",
-      available: props.diffAvailable,
-      disabledReason: messages(SURFACE_UNAVAILABLE_HINTS.diff),
-      onClick: props.onAddDiff,
-    },
-    {
-      label: msg("Pull request"),
-      icon: PullRequestGlyph.pullRequest,
-      shortcut: "P",
-      available: props.pullRequestAvailable,
-      disabledReason: messages(SURFACE_UNAVAILABLE_HINTS.pullRequest),
-      onClick: props.onAddPullRequest,
-    },
-    {
-      label: msg("Linked items"),
-      icon: PullRequestGlyph.link,
-      shortcut: "L",
-      available: props.pullRequestsAvailable,
-      disabledReason: messages(SURFACE_UNAVAILABLE_HINTS.pullRequests),
-      onClick: props.onAddPullRequests,
-    },
-    {
-      label: msg("Device"),
-      description: msg("Watch an iOS Simulator or Android Emulator."),
-      icon: Smartphone,
-      shortcut: "M",
-      available: props.deviceAvailable,
-      disabledReason: messages(SURFACE_UNAVAILABLE_HINTS.device),
-      onClick: props.onAddDevice,
-    },
+    ...(AURAFARMING_FEATURES.diffs
+      ? [
+          {
+            label: msg("Diff"),
+            icon: FileDiff,
+            shortcut: "D",
+            available: props.diffAvailable,
+            disabledReason: messages(SURFACE_UNAVAILABLE_HINTS.diff),
+            onClick: props.onAddDiff,
+          },
+        ]
+      : []),
+    ...(AURAFARMING_FEATURES.pullRequests
+      ? [
+          {
+            label: msg("Pull request"),
+            icon: PullRequestGlyph.pullRequest,
+            shortcut: "P",
+            available: props.pullRequestAvailable,
+            disabledReason: messages(SURFACE_UNAVAILABLE_HINTS.pullRequest),
+            onClick: props.onAddPullRequest,
+          },
+        ]
+      : []),
+    ...(AURAFARMING_FEATURES.pullRequests || AURAFARMING_FEATURES.issues
+      ? [
+          {
+            label: msg("Linked items"),
+            icon: PullRequestGlyph.link,
+            shortcut: "L",
+            available: props.pullRequestsAvailable,
+            disabledReason: messages(SURFACE_UNAVAILABLE_HINTS.pullRequests),
+            onClick: props.onAddPullRequests,
+          },
+        ]
+      : []),
+    ...(AURAFARMING_FEATURES.devices
+      ? [
+          {
+            label: msg("Device"),
+            description: msg("Watch an iOS Simulator or Android Emulator."),
+            icon: Smartphone,
+            shortcut: "M",
+            available: props.deviceAvailable,
+            disabledReason: messages(SURFACE_UNAVAILABLE_HINTS.device),
+            onClick: props.onAddDevice,
+          },
+        ]
+      : []),
     ...(props.onAddSideChat
       ? [
           {
@@ -1227,38 +1244,54 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       disabledReason: messages(SURFACE_DISABLED_REASONS.files),
       onClick: props.onAddFiles,
     },
-    {
-      label: msg("Diff"),
-      icon: FileDiff,
-      shortcut: "D",
-      available: props.diffAvailable,
-      disabledReason: messages(SURFACE_DISABLED_REASONS.diff),
-      onClick: props.onAddDiff,
-    },
-    {
-      label: msg("Pull request"),
-      icon: PullRequestGlyph.pullRequest,
-      shortcut: "P",
-      available: props.pullRequestAvailable,
-      disabledReason: messages(SURFACE_DISABLED_REASONS.pullRequest),
-      onClick: props.onAddPullRequest,
-    },
-    {
-      label: msg("Linked items"),
-      icon: PullRequestGlyph.link,
-      shortcut: "L",
-      available: props.pullRequestsAvailable,
-      disabledReason: messages(SURFACE_DISABLED_REASONS.pullRequests),
-      onClick: props.onAddPullRequests,
-    },
-    {
-      label: msg("Device"),
-      icon: Smartphone,
-      shortcut: "M",
-      available: props.deviceAvailable,
-      disabledReason: messages(SURFACE_DISABLED_REASONS.device),
-      onClick: props.onAddDevice,
-    },
+    ...(AURAFARMING_FEATURES.diffs
+      ? [
+          {
+            label: msg("Diff"),
+            icon: FileDiff,
+            shortcut: "D",
+            available: props.diffAvailable,
+            disabledReason: messages(SURFACE_DISABLED_REASONS.diff),
+            onClick: props.onAddDiff,
+          },
+        ]
+      : []),
+    ...(AURAFARMING_FEATURES.pullRequests
+      ? [
+          {
+            label: msg("Pull request"),
+            icon: PullRequestGlyph.pullRequest,
+            shortcut: "P",
+            available: props.pullRequestAvailable,
+            disabledReason: messages(SURFACE_DISABLED_REASONS.pullRequest),
+            onClick: props.onAddPullRequest,
+          },
+        ]
+      : []),
+    ...(AURAFARMING_FEATURES.pullRequests || AURAFARMING_FEATURES.issues
+      ? [
+          {
+            label: msg("Linked items"),
+            icon: PullRequestGlyph.link,
+            shortcut: "L",
+            available: props.pullRequestsAvailable,
+            disabledReason: messages(SURFACE_DISABLED_REASONS.pullRequests),
+            onClick: props.onAddPullRequests,
+          },
+        ]
+      : []),
+    ...(AURAFARMING_FEATURES.devices
+      ? [
+          {
+            label: msg("Device"),
+            icon: Smartphone,
+            shortcut: "M",
+            available: props.deviceAvailable,
+            disabledReason: messages(SURFACE_DISABLED_REASONS.device),
+            onClick: props.onAddDevice,
+          },
+        ]
+      : []),
     ...(props.onAddSideChat
       ? [
           {
