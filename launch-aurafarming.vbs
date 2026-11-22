@@ -1,3 +1,5 @@
+Set fso = CreateObject("Scripting.FileSystemObject")
+scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.CurrentDirectory = "D:\aurafarming-harness"
-WshShell.Run "cmd.exe /c ""D:\aurafarming-harness\launch-aurafarming.cmd""", 0, False
+WshShell.CurrentDirectory = scriptDir
+WshShell.Run "cmd.exe /c """ & scriptDir & "\launch-aurafarming.cmd""", 0, False
