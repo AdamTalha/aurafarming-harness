@@ -818,12 +818,15 @@ export const make = Effect.gen(function* () {
     window.webContents.on("before-input-event", (event, input) => {
       quitShortcutHandler(event, input);
       if (window.isDestroyed()) return;
-      // Cmd/Ctrl+W reaches the renderer; DevTools uses the native menu shortcut.
+      // Cmd/Ctrl+W and Ctrl+Tab reach the renderer; DevTools uses the native menu shortcut.
+      const isCtrlTab =
+        input.control && !input.alt && !input.meta && input.key.toLowerCase() === "tab";
       window.webContents.setIgnoreMenuShortcuts(
-        (environment.platform === "darwin" ? input.meta : input.control) &&
-          !input.alt &&
-          !input.shift &&
-          input.key.toLowerCase() === "w",
+        isCtrlTab ||
+          ((environment.platform === "darwin" ? input.meta : input.control) &&
+            !input.alt &&
+            !input.shift &&
+            input.key.toLowerCase() === "w"),
       );
       // A held Cmd/Ctrl+W closes one tab or terminal, not each one behind it.
       if (input.type !== "keyDown" || !input.isAutoRepeat) return;
