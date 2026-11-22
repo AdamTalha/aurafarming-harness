@@ -1382,17 +1382,19 @@ export const layerMcpTransport = <RA, RE, RR>(registrations: Layer.Layer<RA, RE,
 
 /** Every tool the MCP server advertises. Filtered by AURAFARMING_FEATURES. */
 export const layerTools = Layer.mergeAll(
-  ...(AURAFARMING_FEATURES.preview ? [layerPreviewToolkit, layerPreviewControlsRegistration] : []),
+  AURAFARMING_FEATURES.preview
+    ? Layer.mergeAll(layerPreviewToolkit, layerPreviewControlsRegistration)
+    : Layer.empty,
   layerOrchestratorToolkit,
   layerThreadToolkit,
   layerAttachmentToolkit,
   layerProjectRegistration,
   layerEnvironmentToolkit,
   layerThemeToolkit,
-  ...(AURAFARMING_FEATURES.worktrees ? [layerWorktreeToolkitRegistration] : []),
-  ...(AURAFARMING_FEATURES.pullRequests ? [layerPullRequestsToolkit] : []),
-  ...(AURAFARMING_FEATURES.issues ? [layerIssuesToolkit] : []),
-  ...(AURAFARMING_FEATURES.devices ? [layerDeviceToolkit] : []),
+  AURAFARMING_FEATURES.worktrees ? layerWorktreeToolkitRegistration : Layer.empty,
+  AURAFARMING_FEATURES.pullRequests ? layerPullRequestsToolkit : Layer.empty,
+  AURAFARMING_FEATURES.issues ? layerIssuesToolkit : Layer.empty,
+  AURAFARMING_FEATURES.devices ? layerDeviceToolkit : Layer.empty,
   layerHtmlToolkit,
   layerMessageToolkit,
 );

@@ -1,4 +1,5 @@
 import { AgentScope } from "@t3tools/shared/AgentScope";
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import * as KeyedLock from "@t3tools/shared/KeyedLock";
 import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
 import {
@@ -595,11 +596,18 @@ export const layerWithOptions = (
               threadId,
               Effect.gen(function* () {
                 // Live providers build MCP clients once; reuse credentials across workspace handoffs.
-                const { browser: browserToolsAvailable, device: deviceToolsAvailable } =
+                const { browser: rawBrowserToolsAvailable, device: rawDeviceToolsAvailable } =
                   yield* agentAccessSettings(threadId);
+                const browserToolsAvailable =
+                  AURAFARMING_FEATURES.preview && rawBrowserToolsAvailable;
+                const deviceToolsAvailable =
+                  AURAFARMING_FEATURES.devices && rawDeviceToolsAvailable;
                 const capabilities = new Set<
                   import("../mcp/McpInvocationContext.ts").McpCapability
-                >(["orchestration", "worktree", "pull-requests", "issues"]);
+                >(["orchestration"]);
+                if (AURAFARMING_FEATURES.worktrees) capabilities.add("worktree");
+                if (AURAFARMING_FEATURES.pullRequests) capabilities.add("pull-requests");
+                if (AURAFARMING_FEATURES.issues) capabilities.add("issues");
                 if (browserToolsAvailable) capabilities.add("preview");
                 if (deviceToolsAvailable) capabilities.add("device");
                 const backgroundWait = yield* registry.get(providerInstanceId).pipe(

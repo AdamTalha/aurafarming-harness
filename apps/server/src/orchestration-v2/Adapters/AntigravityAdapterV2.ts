@@ -15,6 +15,7 @@ import * as Semaphore from "effect/Semaphore";
 import * as Scope from "effect/Scope";
 import * as EffectAcpErrors from "effect-acp/errors";
 
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import * as ProviderHost from "@t3tools/provider-core/server/ProviderHost";
 import { PULL_REQUEST_LINKING_INSTRUCTIONS } from "@t3tools/provider-core/server/runtimeInstructions";
 import type { AntigravityAuth } from "../../provider/AntigravityAuth.ts";
@@ -157,7 +158,9 @@ export function makeAntigravityAcpAdapterFlavor(
           options.makeRuntime({
             ...input,
             clientFileReads: true,
-            sessionSystemPromptAppend: PULL_REQUEST_LINKING_INSTRUCTIONS,
+            ...(AURAFARMING_FEATURES.pullRequests || AURAFARMING_FEATURES.issues
+              ? { sessionSystemPromptAppend: PULL_REQUEST_LINKING_INSTRUCTIONS }
+              : {}),
           }),
         )
         .pipe(Effect.provideService(Scope.Scope, scope));
