@@ -3,21 +3,24 @@ import { scopeThreadRef, scopedThreadKey } from "@t3tools/client-runtime/environ
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/models";
 import { isShownUnderParent } from "@t3tools/client-runtime/state/threads";
 import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
-import { useLocation, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { useGT } from "gt-react";
 import { Code2Icon, CornerDownLeftIcon } from "lucide-react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { isCommandPaletteOpen } from "../commandPaletteBus";
+import { useComposerDraftStore } from "../composerDraftStore";
+import { useShownThreadRouteTarget } from "../hooks/useShownThreadRouteTarget";
 import { resolveShortcutCommand, threadRecentDirectionFromCommand } from "../keybindings";
 import { orderKeysByMru, recordThreadMruVisit } from "../lib/threadMruHistory";
 import { cn } from "../lib/utils";
 import { isModelPickerOpen } from "../modelPickerVisibility";
 import { useDelegatedUnderParent, useProjects, useVisibleThreadShells } from "../state/entities";
 import { primaryServerKeybindingsAtom } from "../state/server";
-import { buildThreadRouteParams, resolveThreadRouteRef } from "../threadRoutes";
+import { buildThreadRouteParams, resolveActiveThreadRouteRef } from "../threadRoutes";
 
 const MAX_SWITCHER_ITEMS = 20;
+const POINTER_MOVE_THRESHOLD_PX = 4;
 
 interface SwitcherItem {
   readonly key: string;
@@ -30,23 +33,31 @@ interface SwitcherState {
   readonly selectedIndex: number;
 }
 
-function threadRecencyMs(thread: EnvironmentThreadShell): number {
-  const timestamps = [
-    thread.lastVisitedAt,
-    thread.latestUserAuthoredMessageAt,
-    thread.latestUserMessageAt,
-    thread.updatedAt,
-    thread.createdAt,
-  ];
-  let best = 0;
-  for (const ts of timestamps) {
-    if (!ts) continue;
-    const parsed = Date.parse(ts);
-    if (!Number.isNaN(parsed) && parsed > best) {
-      best = parsed;
-    }
-  }
-  return best;
+function parseTimestampMs(value: string | null | undefined): number {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+/**
+ * Primary sort: server-tracked `lastVisitedAt` (exact visit recency).
+ * Secondary sort (for never-visited threads): latest user message / updated / created timestamp.
+ */
+function compareThreadsByRecency(a: EnvironmentThreadShell, b: EnvironmentThreadShell): number {
+  const visitedDiff = parseTimestampMs(b.lastVisitedAt) - parseTimestampMs(a.lastVisitedAt);
+  if (visitedDiff !== 0) return visitedDiff;
+
+  const fallbackA =
+    parseTimestampMs(a.latestUserAuthoredMessageAt) ||
+    parseTimestampMs(a.latestUserMessageAt) ||
+    parseTimestampMs(a.updatedAt) ||
+    parseTimestampMs(a.createdAt);
+  const fallbackB =
+    parseTimestampMs(b.latestUserAuthoredMessageAt) ||
+    parseTimestampMs(b.latestUserMessageAt) ||
+    parseTimestampMs(b.updatedAt) ||
+    parseTimestampMs(b.createdAt);
+  return fallbackB - fallbackA;
 }
 
 function isDirectCtrlTabEvent(event: KeyboardEvent): "next" | "previous" | null {
@@ -62,8 +73,13 @@ function isKeybindingCaptureTarget(target: EventTarget | null): boolean {
 export function RecentThreadSwitcher() {
   const gt = useGT();
   const router = useRouter();
-  // Subscribe to route location changes so `routeThreadKey` stays fresh on navigation.
-  useLocation({ select: (location) => location.pathname });
+  const { shownTarget } = useShownThreadRouteTarget();
+  const routeDraftThread = useComposerDraftStore((store) =>
+    shownTarget?.kind === "draft" ? store.getDraftSession(shownTarget.draftId) : null,
+  );
+  const routeDraftRedirect = useComposerDraftStore((store) =>
+    shownTarget?.kind === "draft" ? store.getPromotedDraftRedirect(shownTarget.draftId) : null,
+  );
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const visibleThreads = useVisibleThreadShells();
   const delegatedUnderParent = useDelegatedUnderParent();
@@ -71,10 +87,15 @@ export function RecentThreadSwitcher() {
 
   const [switcher, setSwitcher] = useState<SwitcherState | null>(null);
   const switcherRef = useRef<SwitcherState | null>(null);
+  const pointerOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerMovedRef = useRef(false);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const routeParams = router.state.matches.at(-1)?.params ?? {};
-  const routeThreadRef = resolveThreadRouteRef(routeParams);
+  const routeThreadRef = resolveActiveThreadRouteRef(
+    shownTarget,
+    routeDraftThread,
+    routeDraftRedirect,
+  );
   const routeThreadKey = routeThreadRef ? scopedThreadKey(routeThreadRef) : null;
 
   const projectNameByKey = new Map<string, string>();
@@ -94,9 +115,7 @@ export function RecentThreadSwitcher() {
       ),
   );
 
-  const threadsByRecency = [...candidateThreads].toSorted(
-    (a, b) => threadRecencyMs(b) - threadRecencyMs(a),
-  );
+  const threadsByRecency = [...candidateThreads].toSorted(compareThreadsByRecency);
   const threadByKey = new Map<string, EnvironmentThreadShell>();
   const recencyKeys: string[] = [];
   for (const thread of threadsByRecency) {
@@ -112,6 +131,14 @@ export function RecentThreadSwitcher() {
   }, [routeThreadKey]);
 
   const updateSwitcher = useEffectEvent((next: SwitcherState | null) => {
+    if (next === null) {
+      pointerOriginRef.current = null;
+      pointerMovedRef.current = false;
+    } else if (switcherRef.current === null) {
+      // Fresh open: ignore stationary mouse resting over the list until pointer actually moves.
+      pointerOriginRef.current = null;
+      pointerMovedRef.current = false;
+    }
     switcherRef.current = next;
     setSwitcher(next);
   });
@@ -178,15 +205,29 @@ export function RecentThreadSwitcher() {
         commitSelection(active.items[active.selectedIndex]);
         return;
       }
-      const direction =
-        resolveDirection(event) ??
-        (event.key === "ArrowDown" ? "next" : event.key === "ArrowUp" ? "previous" : null);
-      if (direction !== null) {
+      const tabDirection = resolveDirection(event);
+      if (tabDirection !== null) {
+        event.preventDefault();
+        event.stopPropagation();
+        // Each Tab tap advances exactly 1 entry; ignore OS key-repeat bursts.
+        if (event.repeat) return;
+        const len = active.items.length;
+        if (len === 0) return;
+        const delta = tabDirection === "next" ? 1 : -1;
+        updateSwitcher({
+          items: active.items,
+          selectedIndex: (active.selectedIndex + delta + len) % len,
+        });
+        return;
+      }
+      const arrowDirection =
+        event.key === "ArrowDown" ? "next" : event.key === "ArrowUp" ? "previous" : null;
+      if (arrowDirection !== null) {
         event.preventDefault();
         event.stopPropagation();
         const len = active.items.length;
         if (len === 0) return;
-        const delta = direction === "next" ? 1 : -1;
+        const delta = arrowDirection === "next" ? 1 : -1;
         updateSwitcher({
           items: active.items,
           selectedIndex: (active.selectedIndex + delta + len) % len,
@@ -195,7 +236,7 @@ export function RecentThreadSwitcher() {
       return;
     }
 
-    if (isCommandPaletteOpen() || isModelPickerOpen()) return;
+    if (event.repeat || isCommandPaletteOpen() || isModelPickerOpen()) return;
     const direction = resolveDirection(event);
     if (direction === null) return;
 
@@ -282,11 +323,27 @@ export function RecentThreadSwitcher() {
                 type="button"
                 role="option"
                 aria-selected={isSelected}
-                onMouseEnter={() => {
-                  updateSwitcher({
-                    items: switcher.items,
-                    selectedIndex: index,
-                  });
+                onMouseMove={(event) => {
+                  if (!pointerMovedRef.current) {
+                    const origin = pointerOriginRef.current;
+                    if (origin === null) {
+                      pointerOriginRef.current = { x: event.clientX, y: event.clientY };
+                      return;
+                    }
+                    if (
+                      Math.abs(event.clientX - origin.x) < POINTER_MOVE_THRESHOLD_PX &&
+                      Math.abs(event.clientY - origin.y) < POINTER_MOVE_THRESHOLD_PX
+                    ) {
+                      return;
+                    }
+                    pointerMovedRef.current = true;
+                  }
+                  if (switcherRef.current && switcherRef.current.selectedIndex !== index) {
+                    updateSwitcher({
+                      items: switcherRef.current.items,
+                      selectedIndex: index,
+                    });
+                  }
                 }}
                 onMouseDown={(event) => {
                   event.preventDefault();

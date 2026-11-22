@@ -4,7 +4,7 @@
  * Persisted in localStorage so the recent visit order survives app restarts.
  */
 
-const STORAGE_KEY = "aurafarming:thread-mru:v1";
+const STORAGE_KEY = "aurafarming:thread-mru:v2";
 const MAX_MRU_ENTRIES = 128;
 
 let mruStack: string[] = loadInitialStack();
