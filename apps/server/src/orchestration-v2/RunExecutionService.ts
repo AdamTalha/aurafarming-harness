@@ -1,4 +1,8 @@
-import { makeAssistantStreamingFilter } from "./assistantStreaming.ts";
+import {
+  makeAssistantStreamingFilter,
+  makeRawAssistantStreamingFilter,
+} from "./assistantStreaming.ts";
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
 import {
   isDelegatedAppThread,
@@ -1084,6 +1088,7 @@ export const layer: Layer.Layer<
     const captureRunBaseline = Effect.fn("RunExecutionService.captureBaseline")(function* (
       input: RunBaselineInput,
     ) {
+      if (!AURAFARMING_FEATURES.gitCheckpoints) return;
       // Side chats share the parent's worktree; a snapshot would capture the parent's edits.
       if (input.appThread.lineage.sideChat === true) return;
       yield* checkpointService
@@ -1291,7 +1296,10 @@ export const layer: Layer.Layer<
         // continuation. Unlike the root's, these must hold the stream past owner loss.
         const childSnapshotPendingWork = new Set<ProviderThreadId>();
         let rootTurnOwnershipChecked = false;
-        const assistantStreaming = makeAssistantStreamingFilter(responseStreamingMode);
+        const assistantStreaming =
+          AURAFARMING_FEATURES.rawResponseStreaming && responseStreamingMode !== "turn"
+            ? makeRawAssistantStreamingFilter()
+            : makeAssistantStreamingFilter(responseStreamingMode);
         // Set when ingestion ends or finalization settles the run's open items, which a later
         // streaming snapshot must not reopen.
         let idleFlushClosed = false;

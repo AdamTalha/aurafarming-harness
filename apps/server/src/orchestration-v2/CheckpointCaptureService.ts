@@ -17,6 +17,7 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import * as CheckpointService from "./CheckpointService.ts";
 import * as EventSink from "./EventSink.ts";
 import * as IdAllocator from "@t3tools/provider-core/server/IdAllocator";
@@ -79,7 +80,7 @@ export const layer: Layer.Layer<
       // A checkpoint on a settled run proves this at-least-once effect already committed.
       if (
         run !== undefined &&
-        run.checkpointId !== null &&
+        (run.checkpointId !== null || !AURAFARMING_FEATURES.gitCheckpoints) &&
         (run.status === "completed" || stopped)
       ) {
         return;
@@ -106,6 +107,52 @@ export const layer: Layer.Layer<
       }
 
       const capturedAt = yield* DateTime.now;
+      if (!AURAFARMING_FEATURES.gitCheckpoints) {
+        if (stopped) {
+          return;
+        }
+        const commandId = CommandId.make(`command:effect:checkpoint.capture:${run.id}`);
+        const { delegatedCompletion: _delegatedCompletion, ...runWithoutDelegatedCompletion } = run;
+        yield* eventSink.commitCommand({
+          commandId,
+          threadId: input.threadId,
+          commandType: "checkpoint.capture",
+          acceptedAt: capturedAt,
+          effects: [],
+          events: [
+            {
+              id: yield* ids.allocate.event({ threadId: input.threadId, commandId }),
+              type: "run.updated",
+              threadId: input.threadId,
+              runId: run.id,
+              nodeId: rootNode.id,
+              providerInstanceId: run.providerInstanceId,
+              occurredAt: capturedAt,
+              payload: {
+                ...runWithoutDelegatedCompletion,
+                status: "completed",
+                completedAt: capturedAt,
+              },
+            },
+            {
+              id: yield* ids.allocate.event({ threadId: input.threadId, commandId }),
+              type: "node.updated" as const,
+              threadId: input.threadId,
+              runId: run.id,
+              nodeId: rootNode.id,
+              providerInstanceId: run.providerInstanceId,
+              occurredAt: capturedAt,
+              payload: {
+                ...rootNode,
+                status: "completed" as const,
+                completedAt: capturedAt,
+                checkpointScopeId: scope.id,
+              },
+            },
+          ],
+        });
+        return;
+      }
       const baselineOrdinalWithinScope = Math.max(0, run.ordinal - 1);
       const isPreserved = (ordinalWithinScope: number) =>
         preservedCheckpointOrdinals.includes(ordinalWithinScope);

@@ -7,6 +7,7 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import * as ProjectEnrichment from "../project/ProjectEnrichmentService.ts";
 import * as ProjectService from "../project/ProjectService.ts";
 import * as PullRequestService from "../pullRequest/PullRequestService.ts";
@@ -184,6 +185,7 @@ export const layerObserver = Layer.effect(
           );
           const thread = yield* projections.getThreadShell(threadId);
           if (!thread) return;
+          if (!AURAFARMING_FEATURES.git) return;
           // Forge discovery probes can take seconds; like the PR lookup, the next turn must not wait.
           yield* refreshMissingRepositoryIdentity(thread.projectId).pipe(
             FiberMap.run(identityRefreshes, thread.projectId),
