@@ -32,12 +32,14 @@ export const AURAFARMING_FEATURES = {
   mruThreadSwitcher: true,
   /** Disable upstream T3 Code auto-updater so custom builds are never overwritten */
   autoUpdater: false,
+  /** Disable Antigravity CLI telemetry (`agy acp --disable-telemetry`) */
+  antigravityDisableTelemetry: true,
+  /** Disable Antigravity built-in default skills (`--include-default-customizations=false`) while keeping user skills & hooks */
+  antigravityIncludeDefaultCustomizations: false,
 } as const;
 
 export const DISABLED_SETTINGS_PATHS: ReadonlySet<string> = new Set([
-  ...(!AURAFARMING_FEATURES.diffs && !AURAFARMING_FEATURES.pullRequests
-    ? ["/settings/diffs"]
-    : []),
+  ...(!AURAFARMING_FEATURES.diffs && !AURAFARMING_FEATURES.pullRequests ? ["/settings/diffs"] : []),
   ...(!AURAFARMING_FEATURES.devices ? ["/settings/devices"] : []),
   ...(!AURAFARMING_FEATURES.scheduledTasks ? ["/settings/scheduled-tasks"] : []),
   ...(!AURAFARMING_FEATURES.git &&

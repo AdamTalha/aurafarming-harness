@@ -48,7 +48,8 @@ import { m } from "../i18n/messages.ts";
 
 const DEFAULT_DESKTOP_BACKEND_PORT = 3773;
 const MAX_TCP_PORT = 65_535;
-const DESKTOP_BACKEND_PORT_PROBE_HOSTS = ["127.0.0.1", "0.0.0.0", "::"] as const;
+const DESKTOP_BACKEND_PORT_PROBE_HOSTS_LOCAL = ["127.0.0.1"] as const;
+const DESKTOP_BACKEND_PORT_PROBE_HOSTS_NETWORK = ["127.0.0.1", "0.0.0.0", "::"] as const;
 
 const LinuxDesktopSessionConfig = Config.all({
   current: Config.String("XDG_CURRENT_DESKTOP").pipe(Config.option),
@@ -90,6 +91,7 @@ const { logInfo: logStartupInfo, logError: logStartupError } =
 
 const resolveDesktopBackendPort = Effect.fn("resolveDesktopBackendPort")(function* (
   configuredPort: Option.Option<number>,
+  networkAccessible: boolean,
 ) {
   if (Option.isSome(configuredPort)) {
     return {
@@ -98,11 +100,14 @@ const resolveDesktopBackendPort = Effect.fn("resolveDesktopBackendPort")(functio
     } as const;
   }
 
+  const probeHosts = networkAccessible
+    ? DESKTOP_BACKEND_PORT_PROBE_HOSTS_NETWORK
+    : DESKTOP_BACKEND_PORT_PROBE_HOSTS_LOCAL;
   const net = yield* NetService.NetService;
   for (let port = DEFAULT_DESKTOP_BACKEND_PORT; port <= MAX_TCP_PORT; port += 1) {
     let availableOnEveryHost = true;
 
-    for (const host of DESKTOP_BACKEND_PORT_PROBE_HOSTS) {
+    for (const host of probeHosts) {
       if (!(yield* net.canListenOnHost(port, host))) {
         availableOnEveryHost = false;
         break;
@@ -120,7 +125,7 @@ const resolveDesktopBackendPort = Effect.fn("resolveDesktopBackendPort")(functio
   return yield* new DesktopBackendPortUnavailableError({
     startPort: DEFAULT_DESKTOP_BACKEND_PORT,
     maxPort: MAX_TCP_PORT,
-    hosts: DESKTOP_BACKEND_PORT_PROBE_HOSTS,
+    hosts: [...probeHosts],
   });
 });
 
@@ -251,7 +256,10 @@ const startLocalBackend = Effect.gen(function* () {
     return false;
   }
 
-  const backendPortSelection = yield* resolveDesktopBackendPort(environment.configuredBackendPort);
+  const backendPortSelection = yield* resolveDesktopBackendPort(
+    environment.configuredBackendPort,
+    settings.serverExposureMode === "network-accessible",
+  );
   const backendPort = backendPortSelection.port;
   yield* logBootstrapInfo(
     backendPortSelection.selectedByScan

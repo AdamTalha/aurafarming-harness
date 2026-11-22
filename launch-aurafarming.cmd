@@ -1,5 +1,5 @@
 @echo off
 setlocal
-cd /d "%~dp0"
 set "ELECTRON_RUN_AS_NODE="
-call corepack pnpm run start:desktop
+cd /d "%~dp0apps\desktop"
+start "" "%~dp0apps\desktop\node_modules\electron\dist\electron.exe" "dist-electron\boot.cjs"

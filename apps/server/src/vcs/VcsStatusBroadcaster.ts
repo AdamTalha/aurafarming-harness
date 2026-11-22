@@ -29,6 +29,7 @@ import type {
   VcsStatusSubscriptionInput,
 } from "@t3tools/contracts";
 import { DEFAULT_AUTOMATIC_GIT_FETCH_INTERVAL } from "@t3tools/contracts";
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import { mergeGitStatusParts } from "@t3tools/shared/git";
 import * as KeyedLock from "@t3tools/shared/KeyedLock";
 import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
@@ -256,6 +257,27 @@ const normalizeCwd = (cwd: string) =>
     Effect.orElseSucceed(() => cwd),
   );
 
+const DISABLED_LOCAL_STATUS: VcsStatusLocalResult = {
+  isRepo: false,
+  hasPrimaryRemote: false,
+  isDefaultRef: false,
+  refName: null,
+  hasWorkingTreeChanges: false,
+  workingTree: {
+    files: [],
+    insertions: 0,
+    deletions: 0,
+  },
+};
+
+const DISABLED_STATUS: VcsStatusResult = {
+  ...DISABLED_LOCAL_STATUS,
+  hasUpstream: false,
+  aheadCount: 0,
+  behindCount: 0,
+  pr: null,
+};
+
 /** @public */
 export const make = Effect.gen(function* () {
   const automaticFetchInterval = yield* VcsAutomaticFetchInterval;
@@ -264,6 +286,34 @@ export const make = Effect.gen(function* () {
   const backgroundPolicy = yield* BackgroundPolicy.BackgroundPolicy;
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
+  if (!AURAFARMING_FEATURES.git) {
+    return VcsStatusBroadcaster.of({
+      streamBranchStatus: () => Stream.make({ refName: null, isRepo: false }),
+      refreshBranchStatus: Effect.fnUntraced(function* () {
+        return { refName: null, isRepo: false };
+      }),
+      streamBranchChanges: Stream.empty,
+      getStatus: Effect.fnUntraced(function* () {
+        return DISABLED_STATUS;
+      }),
+      refreshLocalStatus: Effect.fnUntraced(function* () {
+        return DISABLED_LOCAL_STATUS;
+      }),
+      refreshAfterCheckout: Effect.fnUntraced(function* () {}),
+      refreshStatus: Effect.fnUntraced(function* () {
+        return DISABLED_STATUS;
+      }),
+      refreshPullRequestStatus: Effect.fnUntraced(function* () {
+        return null;
+      }),
+      streamStatus: () =>
+        Stream.make({
+          _tag: "snapshot" as const,
+          local: DISABLED_LOCAL_STATUS,
+          remote: null,
+        }),
+    });
+  }
   const changesPubSub = yield* Effect.acquireRelease(
     PubSub.unbounded<VcsStatusChange>(),
     (pubsub) => PubSub.shutdown(pubsub),

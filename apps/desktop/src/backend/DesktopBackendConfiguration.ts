@@ -560,9 +560,10 @@ const resolvePrimaryStartConfig = Effect.fn("desktop.backendConfiguration.resolv
 
     return {
       executablePath: process.execPath,
-      // Packaged builds have a separate cache; --require prevents cache settings leaking to provider subprocesses.
+      // Enable V8 compile cache for local builds too; --require avoids leaking cache env vars to child CLIs.
       args: [
-        ...(environment.isPackaged ? ["--require", environment.compileCachePath] : []),
+        "--require",
+        environment.compileCachePath,
         environment.backendEntryPath,
         "--bootstrap-fd",
         "3",

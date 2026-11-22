@@ -2,6 +2,7 @@
 import * as NodeFSP from "node:fs/promises";
 
 import type { AntigravityAuthMethod, ProviderInstanceId } from "@t3tools/contracts";
+import { AURAFARMING_FEATURES } from "@t3tools/shared/aurafarmingFeatures";
 import * as HostProcess from "@t3tools/shared/HostProcess";
 import { resolveNodeExecutable, nodeRuntimeUnavailableMessage } from "@t3tools/shared/nodeRuntime";
 import * as Digest from "effect/crypto/Digest";
@@ -560,6 +561,10 @@ export function buildAntigravityAcpSpawnInput(input: {
       "--app-data-dir",
       // The CLI joins this beneath gemini-dir, including when the value is absolute.
       "antigravity-acp",
+      ...(AURAFARMING_FEATURES.antigravityDisableTelemetry ? ["--disable-telemetry"] : []),
+      ...(!AURAFARMING_FEATURES.antigravityIncludeDefaultCustomizations
+        ? ["--include-default-customizations=false"]
+        : []),
     ],
     cwd: input.cwd,
     env: antigravityEnvironment(
